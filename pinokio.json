@@ -1,0 +1,15 @@
+{
+  "title": "Tscaps",
+  "description": "Open-source video editor in your browser. Focused on subtitles & short-form content. Free alternative to Submagic. https://github.com/francozanardi/tscaps",
+  "icon": "icon.png",
+  "links": [{
+    "title": "Project",
+    "links": [{
+      "title": "Github",
+      "value": "https://github.com/francozanardi/tscaps"
+    }, {
+      "title": "Homepage",
+      "value": "https://tscaps.io"
+    }]
+  }]
+}
