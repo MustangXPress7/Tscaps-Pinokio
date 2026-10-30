@@ -17,15 +17,10 @@ module.exports = {
       message: "pnpm install"
     }
   }, {
-    method: "shell.run",
+    method: "fs.copy",
     params: {
-      path: "app",
-      message: "pnpm build"
-    }
-  }, {
-    method: "shell.run",
-    params: {
-      message: "git add -A && git commit -m 'chore: update' || true && git push"
+      src: "vite.pinokio.mts",
+      dest: "app/apps/studio/vite.config.pinokio.mts"
     }
   }]
 }

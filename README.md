@@ -30,14 +30,42 @@ Run the **Install** tab. It clones the tscaps repository into `app/` and runs `p
 Run the **Start** tab. It launches the Vite dev server:
 
 ```
-pnpm --filter ./apps/studio dev
+pnpm --filter ./apps/studio exec vite --config vite.config.pinokio.mts --port 5173 --strictPort
 ```
 
 Once the dev server prints its URL, the app auto-opens in your system browser (default `http://localhost:5173`). The **Open Web UI** tab also appears and opens the app in the system browser.
 
 ## Update
 
-Run the **Update** tab. It runs `git pull` on both the launcher and `app/` repositories, then `pnpm install` inside `app/`.
+Run the **Update** tab. It runs `git pull` on both the launcher and `app/` repositories, then `pnpm install` inside `app/`. It does not build, commit or push anything.
+
+The dev server is pinned to `http://localhost:5173` (`--port 5173 --strictPort`) so the browser origin never changes. This matters because Tscaps stores projects and user templates in the browser's IndexedDB for that origin, not on disk.
+
+## Where projects are stored
+
+Tscaps is a client-side app, so projects are not files in `app/`:
+
+- Projects: IndexedDB `tscaps` → store `projects` (`app/apps/studio/src/core/projects/infrastructure/repositories/IndexedDbProjectRepository.ts`).
+- User templates: IndexedDB `tscaps` → store `user-templates`.
+- Project videos/thumbnails: IndexedDB caches owned by the videos/preview features.
+
+That means the launcher's Update cannot delete them, because they are not inside the repository. Opening the app from a different origin (`127.0.0.1` vs `localhost`, another port, another browser profile, or a different deploy URL) does show a different, empty storage, so the dev server is pinned to `http://localhost:5173`.
+
+## Disk mirror and restore
+
+Because browser storage can still be cleared, the launcher mirrors the `projects` and `user-templates` stores to disk on every save:
+
+- Location: `data/projects/` and `data/user-templates/` in the launcher root (git-ignored).
+- Update only runs `git pull` + `pnpm install`; it never touches `data/`.
+- `reset.js` only removes `app/`, so `data/` also survives a reset.
+- On start, records found on disk are restored into IndexedDB when the browser copy is missing or older. If the browser storage was wiped, just start the app again and wait for it to reload once.
+- The same restore also runs when you open the app in a different browser or browser profile, because the disk mirror is shared by the launcher rather than tied to one browser profile.
+- Thumbnails up to 2 MB are mirrored too; larger blobs are skipped and the project opens without a preview image.
+- Video files, proxy files and custom user blobs (for example uploaded fonts) are not mirrored because they can be very large. If browser storage is wiped, projects and their captions are restored, but you may need to re-add the source video.
+
+The mirror is implemented by `vite.pinokio.mts`, which `start.js` copies to `app/apps/studio/vite.config.pinokio.mts` before launching Vite. The `app/` folder itself is never edited in place.
+
+To move projects between devices, you can also use **Export** on each project (`.tscaps` file) and **Import .tscaps** on the projects page.
 
 ## Reset
 
@@ -94,6 +122,7 @@ Tscaps/
 ├── app/              # Cloned francozanardi/tscaps repository (pnpm monorepo)
 ├── install.js        # Clone repo + pnpm install
 ├── start.js          # Vite dev server launcher
+├── vite.pinokio.mts  # Disk mirror/restore Vite plugin (copied into app/)
 ├── update.js         # Pull launcher + app + reinstall
 ├── reset.js          # Remove app folder
 ├── pinokio.js        # Launcher UI

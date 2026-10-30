@@ -18,6 +18,13 @@ module.exports = {
       }
     },
     {
+      method: "fs.copy",
+      params: {
+        src: "vite.pinokio.mts",
+        dest: "app/apps/studio/vite.config.pinokio.mts"
+      }
+    },
+    {
       method: "notify",
       params: {
         html: "Click the 'start' tab to launch tscaps!"
